@@ -817,7 +817,7 @@ const SUG_SEC=[
  ["education",/^(educacao|formacao|formacao academica|escolaridade|formacao e cursos|formacao academica e cursos|education|academic background|academic education)$/],
  ["skills",/^(habilidades|competencias|conhecimentos|habilidades tecnicas|competencias tecnicas|ferramentas|tecnologias|ferramentas e tecnologias|habilidades e competencias|skills|technical skills|core competencies|key skills|tools|technologies)$/],
  ["languages",/^(idiomas|idioma|languages|language)$/],
- ["courses",/^(cursos|treinamentos|cursos e treinamentos|treinamentos e cursos|treinamentos cursos|cursos treinamentos|cursos e certificacoes|certificacoes|certificacoes e cursos|licencas e certificacoes|courses|training|certifications|certificates|licenses and certifications|courses and certifications|training and certifications)$/],
+ ["courses",/^(cursos|treinamentos|cursos e treinamentos|treinamentos e cursos|treinamentos cursos|cursos treinamentos|treinamento|treinamento cursos|treinamento e cursos|curso|cursos e treinamento|cursos e certificacoes|certificacoes|certificacoes e cursos|licencas e certificacoes|courses|training|certifications|certificates|licenses and certifications|courses and certifications|training and certifications)$/],
  ["projects",/^(projetos|projetos pessoais|projects|personal projects|key projects)$/]
 ];
 const secKey=l=>{ const n=norm(l).replace(/[^a-z0-9]+/g," ").trim(); if(!n||n.length>45) return null; const m=SUG_SEC.find(s=>s[1].test(n)); return m?m[0]:null; };
@@ -826,10 +826,12 @@ const SUG_H={
  en:{summary:"Summary",skills:"Skills",experience:"Experience",education:"Education",courses:"Courses and certifications",projects:"Projects",languages:"Languages",more:"Other skills",lv:["basic","intermediate","advanced"],now:"Present"}
 };
 const SUG_ORDER=["summary","skills","experience","education","courses","projects","languages"];
-const MON="jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|nov|dez|dec";
-const D1="(?:0?[1-9]|1[0-2])\\s*[\\/.\\-]\\s*(?:19|20)\\d{2}|(?:"+MON+")[a-zç]*\\.?\\s*(?:de\\s+)?(?:19|20)\\d{2}|(?:19|20)\\d{2}";
+const MONTHS="janeiro|fevereiro|marco|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|january|february|march|april|june|july|august|september|october|december|jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|nov|dez|dec";
+const MY="(?:0?[1-9]|1[0-2])\\s*[\\/.\\-]\\s*(?:19|20)\\d{2}|(?:"+MONTHS+")\\.?\\s*(?:de\\s+)?(?:19|20)\\d{2}";
+const D1=MY+"|(?:19|20)\\d{2}";
 const NOWW="atual|atualmente|presente|present|current|hoje|now|ate o momento";
-const RANGE_RE=new RegExp("("+D1+")\\s*(?:[-–—]|a|até|ate|to)\\s*("+D1+"|"+NOWW+")","i");
+const RANGE_RE=new RegExp("(?<![\\d/])("+D1+")(?:\\s*[-–—]\\s*|\\s+(?:a|até|ate|to)\\s+|\\s+)("+D1+"|"+NOWW+")(?![\\d/])","i");
+const MY_ONE_RE=new RegExp("(?<![\\d/])(?:"+MY+")(?![\\d/])","i");
 const BSTART=/^[\s•▪◦‣●■▶►➢➤✓✔★☆♦*\-–—]+/;
 const EMAIL_RE=/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/;
 const PHONE_RE=/(\+?\d{1,3}[\s.\-]?)?\(?\d{2}\)?[\s.\-]?9?\d{4}[\s.\-]?\d{4}/;
@@ -844,6 +846,14 @@ function isPersonal(t){ const n=norm(t);
 const cap=s=>s.replace(/^[a-zà-ÿ]/,c=>c.toUpperCase());
 function fmtD(s){ s=s.trim(); const m=s.match(/^(\d{1,2})\s*[\/.\-]\s*((?:19|20)\d{2})$/); return m?m[1].padStart(2,"0")+"/"+m[2]:cap(s); }
 function normRange(m,l){ const b=new RegExp("^("+NOWW+")$").test(norm(m[2]).trim())?SUG_H[l].now:fmtD(m[2]); return fmtD(m[1])+" – "+b; }
+function dateOf(t,l){
+  if(t.length>110) return null;
+  let m=t.match(RANGE_RE), d;
+  if(m) d=normRange(m,l); else { m=t.match(MY_ONE_RE); if(!m) return null; d=fmtD(m[0]); }
+  const at=t.indexOf(m[0]);
+  const rest=t.replace(m[0],"  ").split(/\s{2,}/).map(x=>trimEnds(x)).filter(Boolean).join(", ");
+  return {d,rest,raw:m[0],pure:!trimEnds(t.slice(0,at))};
+}
 const trimEnds=s=>s.replace(/^[\s|•·\-–—,;:()]+|[\s|•·\-–—,;:()]+$/g,"");
 function levelize(t,l,st){
   return t.replace(/\s*[:\-–]?\s*([●⬤■▪◼★○□▫◻☆◐◑]{3,})\s*$/,(m,d)=>{
@@ -851,28 +861,30 @@ function levelize(t,l,st){
     st.levels++; return (/:/.test(t)?" – ":": ")+SUG_H[l].lv[r<=0.4?0:r<=0.7?1:2];
   });
 }
+const CONT_RE=/(?:[,;]|(?<![a-zà-ÿ0-9])(?:a|o|as|os|e|de|da|do|das|dos|em|no|na|nos|nas|com|para|por|que|ou|ao|aos|um|uma|sem|and|of|to|in|the|for|with|or))\s*$/i;
 function parseRoles(lines,l,st){
+  const info=lines.map(x=>x.b?null:dateOf(x.t,l));
   const roles=[]; let cur=null;
-  const look=i=>[0,1].some(k=>lines[i+k]&&!lines[i+k].b&&RANGE_RE.test(lines[i+k].t));
   const start=()=>{ cur={head:[],dates:"",bul:[]}; roles.push(cur); };
-  const addHead=(t,dm)=>{ if(dm){ const nd=normRange(dm,l); if(nd!==dm[0]) st.dates++; cur.dates=nd; const rest=trimEnds(t.replace(RANGE_RE,"")); if(rest) cur.head.push(rest); } else cur.head.push(t); };
+  const addHead=i=>{ const di=info[i]; if(di){ if(di.d!==di.raw) st.dates++; if(!cur.dates) cur.dates=di.d; if(di.rest) cur.head.push(di.rest); } else cur.head.push(lines[i].t); };
   lines.forEach((ln,i)=>{
-    const t=ln.t, dm=t.match(RANGE_RE);
-    if(!cur){ start(); addHead(t,dm); return; }
+    const t=ln.t;
+    if(!cur){ start(); addHead(i); return; }
     if(ln.b){ cur.bul.push({t,b:true}); return; }
-    const header=!cur.dates&&!cur.bul.length;
-    if(header){ addHead(t,dm); return; }
-    if(t.length<=70&&!/^[a-zà-ÿ]/.test(t)&&look(i)){
-      const prev=cur.bul[cur.bul.length-1];
-      const carry=(!dm&&prev&&!prev.b&&prev.t.length<=60&&!/[.;:]$/.test(prev.t)&&!RANGE_RE.test(prev.t))?cur.bul.pop().t:null;
-      start(); if(carry) cur.head.push(carry); addHead(t,dm); return;
+    if(!cur.dates&&!cur.bul.length){ addHead(i); return; }
+    const prev=cur.bul[cur.bul.length-1], nx=info[i+1];
+    const cont=prev&&(/^[a-zà-ÿ(]/.test(t)||CONT_RE.test(prev.t));
+    if(!cont&&t.length<=70&&(info[i]||nx)){
+      let carry=null;
+      if(!info[i]&&nx&&nx.pure&&prev&&!prev.b&&prev.t.length<=60&&!/[.;:]$/.test(prev.t)&&!info[i-1]) carry=cur.bul.pop().t;
+      start(); if(carry) cur.head.push(carry); addHead(i); return;
     }
-    if(!cur.bul.length&&cur.head.length<2&&t.length<=70&&!/[.;]$/.test(t)){ cur.head.push(t); return; }
-    const prev=cur.bul[cur.bul.length-1];
-    if(prev&&/^[a-zà-ÿ(]/.test(t)) prev.t+=" "+t; else cur.bul.push({t,b:false});
+    if(!cur.bul.length&&cur.head.length<2&&t.length<=70&&!/[.;]$/.test(t)&&!info[i]){ cur.head.push(t); return; }
+    if(cont) prev.t+=" "+t; else cur.bul.push({t,b:false});
   });
   return roles.map(r=>({title:r.head[0]||"",org:r.head.slice(1).join(", "),dates:r.dates,bullets:r.bul.map(x=>x.t)}));
 }
+const fmtPhone=x=>{ if(!/^[+\d\s().\-]+$/.test(x)) return x; const d=x.replace(/\D/g,""); const m=d.match(/^(?:55)?(\d{2})(9?\d{4})(\d{4})$/); return m?`+55 (${m[1]}) ${m[2]}-${m[3]}`:x; };
 function buildSuggestion(doc,l,picks){
   const H=SUG_H[l], st={levels:0,dates:0,glyphs:0}, changes=[], A=(pt,en)=>changes.push(B(pt,en));
   const raw=doc.rich||((doc.lines&&doc.lines.length?doc.lines:doc.text.split("\n")).map(t=>({t,b:false})));
@@ -880,7 +892,7 @@ function buildSuggestion(doc,l,picks){
   raw.forEach(r=>{
     let t=r.t, b=r.b;
     const g=(t.match(PUA_RE)||[]).length+(t.match(/\[(ícone|icone|icon)\]/gi)||[]).length; st.glyphs+=g;
-    t=t.replace(PUA_RE,"").replace(/\[(ícone|icone|icon)\]/gi,"").replace(/ /g," ");
+    t=t.replace(PUA_RE,"").replace(/\[(ícone|icone|icon)\]/gi,"").replace(/ /g," ").replace(/[\u0000-\u001f]/g,c=>c==="\t"?"  ":" ");
     if(BSTART.test(t)&&!RANGE_RE.test(t.slice(0,12))){ b=true; t=t.replace(BSTART,""); }
     t=t.replace(/\s+$/,"").replace(/^\s+/,"");
     if(t) lines.push({t,b});
@@ -889,7 +901,7 @@ function buildSuggestion(doc,l,picks){
   const secs={header:[]}, renamed=[]; let key="header";
   lines.forEach(ln=>{
     const k=ln.b?null:secKey(ln.t);
-    if(k){ key=k; secs[k]=secs[k]||[]; if(norm(ln.t).replace(/[^a-z0-9]+/g," ").trim()!==norm(H[k]).replace(/[^a-z0-9]+/g," ").trim()) renamed.push([ln.t,H[k]]); return; }
+    if(k){ key=k; secs[k]=secs[k]||[]; if(norm(ln.t).replace(/[^a-z0-9]+/g," ").trim()!==norm(H[k]).replace(/[^a-z0-9]+/g," ").trim()) { if(!renamed.some(r=>norm(r[0])===norm(ln.t))) renamed.push([ln.t,H[k]]); } return; }
     (secs[key]=secs[key]||[]).push(ln);
   });
   // cabeçalho
@@ -905,6 +917,7 @@ function buildSuggestion(doc,l,picks){
       unplaced.push(x);
     });
   });
+  contact=contact.map(fmtPhone);
   const hasMail=contact.some(x=>EMAIL_RE.test(x)), hasPhone=contact.some(x=>PHONE_RE.test(x));
   const missing=[];
   const sh=TPL[l]._shell, g=TPL[l].geral;
@@ -928,14 +941,19 @@ function buildSuggestion(doc,l,picks){
     return out;
   };
   if(secs.skills&&secs.skills.length) blocks.skills=skillBlocks(secs.skills);
-  if(secs.languages&&secs.languages.length) blocks.languages=[{t:"bullets",items:plain(secs.languages).map(x=>levelize(x,l,st))}];
+  if(secs.languages&&secs.languages.length) blocks.languages=[{t:"bullets",items:plain(secs.languages).map(x=>levelize(x,l,st)).map(x=>/:/.test(x)?x:x.replace(/\s{2,}/g,": "))}];
   ["experience","education"].forEach(k=>{
     const a=secs[k]; if(!a||!a.length) return;
     const roles=parseRoles(a,l,st);
     if(k==="education"&&!roles.some(r=>r.dates)) blocks[k]=[{t:"bullets",items:plain(a)}];
     else blocks[k]=roles.map(r=>({t:"role",r}));
   });
-  ["courses","projects"].forEach(k=>{ if(secs[k]&&secs[k].length) blocks[k]=[{t:"bullets",items:plain(secs[k]).map(x=>levelize(x,l,st))}]; });
+  ["courses","projects"].forEach(k=>{
+    if(!secs[k]||!secs[k].length) return;
+    let it=plain(secs[k]).map(x=>levelize(x,l,st));
+    if(k==="courses"&&it.length>=2&&it.length%2===0&&it.every(x=>x.length<=50&&!/[.;]$/.test(x))){ it=it.reduce((o,x,n)=>{ if(n%2) o[o.length-1]+=" – "+x; else o.push(x); return o; },[]); st.paired=true; }
+    blocks[k]=[{t:"bullets",items:it}];
+  });
   if(picks.length){
     blocks.skills=blocks.skills||[];
     blocks.skills.push({t:"kv",k:H.more,x:picks.join(", ")});
@@ -954,6 +972,7 @@ function buildSuggestion(doc,l,picks){
   if(st.glyphs>0) A(`Removi ${st.glyphs} ícone(s) e símbolo(s) especial(is).`,`Removed ${st.glyphs} icon(s) and special symbol(s).`);
   if(st.levels>0) A(`Níveis em bolinhas ou barras escritos por extenso (${st.levels}).`,`Dot or bar skill levels written out in words (${st.levels}).`);
   if(removed.length) A(`Tirei dados pessoais desnecessários: ${removed.join("; ")}.`,`Removed unnecessary personal data: ${removed.join("; ")}.`);
+  if(st.paired) A("Cursos: nome e instituição juntos na mesma linha.","Courses: name and institution on the same line.");
   if(st.dates>0) A(`Datas no padrão MM/AAAA – MM/AAAA (${st.dates}).`,`Dates in MM/YYYY – MM/YYYY style (${st.dates}).`);
   if(doc.images>0) A("Foto, logotipos e gráficos ficam de fora: o arquivo novo só tem texto.","Photo, logos and graphics are left out: the new file is text only.");
   A("Atividades em tópicos simples e fonte padrão (Arial 10,5 pt).","Duties in plain bullets and a standard font (Arial 10.5 pt).");
