@@ -884,7 +884,8 @@ function parseRoles(lines,l,st){
   });
   return roles.map(r=>({title:r.head[0]||"",org:r.head.slice(1).join(", "),dates:r.dates,bullets:r.bul.map(x=>x.t)}));
 }
-const fmtPhone=x=>{ if(!/^[+\d\s().\-]+$/.test(x)) return x; const d=x.replace(/\D/g,""); const m=d.match(/^(?:55)?(\d{2})(9?\d{4})(\d{4})$/); return m?`+55 (${m[1]}) ${m[2]}-${m[3]}`:x; };
+const PHONE_G=/(?<!\d)(?:\+?\s?55[\s.\-]?)?\(?(\d{2})\)?[\s.\-]?(9?\d{4})[\s.\-]?(\d{4})(?!\d)/g;
+const fmtPhone=x=>EMAIL_RE.test(x)||URL_RE.test(x)?x:x.replace(PHONE_G,"+55 ($1) $2-$3");
 function buildSuggestion(doc,l,picks){
   const H=SUG_H[l], st={levels:0,dates:0,glyphs:0}, changes=[], A=(pt,en)=>changes.push(B(pt,en));
   const raw=doc.rich||((doc.lines&&doc.lines.length?doc.lines:doc.text.split("\n")).map(t=>({t,b:false})));
@@ -907,7 +908,7 @@ function buildSuggestion(doc,l,picks){
   // cabeçalho
   let name="",headline="",contact=[],unplaced=[],removed=[];
   (secs.header||[]).forEach(({t})=>{
-    const parts=(EMAIL_RE.test(t)||PHONE_RE.test(t)||URL_RE.test(t))?t.split(/\s{2,}|\s*[|·•]\s*/).map(x=>x.trim()).filter(Boolean):[t];
+    const parts=(EMAIL_RE.test(t)||PHONE_RE.test(t)||URL_RE.test(t))?t.replace(/(\S+@\S+\.[A-Za-z]{2,}|https?:\/\/\S+|(?:www\.|linkedin\.com|github\.com)\S*)/g,"  $1  ").split(/\s{2,}|\s*[|·•]\s*/).map(x=>x.trim()).filter(Boolean):[t];
     parts.forEach(x=>{
       if(isPersonal(x)){ removed.push(x); return; }
       if(EMAIL_RE.test(x)||PHONE_RE.test(x)||URL_RE.test(x)){ if(!contact.includes(x)) contact.push(x); return; }
