@@ -131,6 +131,11 @@ select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10
 .paper .og{color:#333}.paper ul{margin:3px 0 0;padding-left:18px}.paper p{margin:3px 0}
 .paper mark{background:#fff3b0;color:inherit;padding:0 1px}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.sug-sc{display:flex;gap:16px;align-items:center}
+.sug-sc div{text-align:center}.sug-sc b{display:block;font-size:30px;line-height:1.1}.sug-sc small{color:var(--muted);font-size:12px}
+.sug-arrow{font-size:22px;color:var(--muted)}
+.kwsel label{display:flex;gap:8px;align-items:flex-start;margin:5px 0;font-size:14px;cursor:pointer}
+.sug-list{margin:0;padding-left:18px;font-size:14px}.sug-list li{margin:4px 0}
 .hidden{display:none!important}
 </style>
 </head>
@@ -150,6 +155,7 @@ select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10
   <div class="tabs" role="tablist">
     <button type="button" role="tab" id="tab-check" aria-selected="true"></button>
     <button type="button" role="tab" id="tab-tpl" aria-selected="false"></button>
+    <button type="button" role="tab" id="tab-sug" aria-selected="false"></button>
   </div>
 
   <div class="grid" id="view-check">
@@ -197,6 +203,15 @@ select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10
     </aside>
     <main><div class="paper" id="paper" aria-label="Preview"></div></main>
   </div>
+
+  <div class="tpl-grid hidden" id="view-sug">
+    <aside class="card stack" aria-label="Sugestão">
+      <div id="sug-side" class="stack"></div>
+      <div class="btn-row"><button type="button" class="btn" id="sug-dl"></button><button type="button" class="btn ghost" id="sug-copy"></button></div>
+      <p class="err hidden" id="sug-msg" role="status"></p>
+    </aside>
+    <main><div class="paper" id="sug-paper" aria-label="Preview"></div></main>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -243,6 +258,13 @@ const UI={
   mktNoteIntl:"",
   tplH:"Modelo em coluna única", tplSeg:"Escolha o segmento", tplMktBr:"Modelo para vagas no Brasil. Mude para English para o padrão internacional.", tplDl:"Baixar .docx", tplCopy:"Copiar texto", tplCopied:"Texto copiado.", tplSaved:"Arquivo enviado para download.", tplFail:"Não foi possível baixar agora. Use “Copiar texto” e cole no Word.",
   tipsH:"Como preencher",
+  tabSug:"Currículo sugerido", sugGo:"Ver currículo sugerido com as correções",
+  sugH:"Currículo sugerido", sugNeed:"Envie e analise um currículo na aba “Verificar currículo” para ver a versão sugerida.",
+  sugOrig:"Original", sugNew:"Sugerido", sugDone:"O que foi corrigido", sugTodo:"O que ainda depende de você",
+  sugNoTodo:"Nenhum ponto pendente nas verificações.", sugKwH:"Palavras-chave da vaga que faltam", sugKwNote:"Marque só o que você realmente domina. Elas entram na seção Habilidades.",
+  sugUnp:"Trechos que não consegui classificar", sugUnpNote:"Estão fora do currículo sugerido. Coloque cada um na seção certa, se fizer sentido.",
+  sugReview:"A reorganização é automática: confira cada seção antes de enviar. O conteúdo é o seu, sem texto inventado. Campos entre [colchetes] precisam ser preenchidos.",
+  sugDl:"Baixar .docx", sugCopy:"Copiar texto", sugSaved:"Arquivo enviado para download.", sugCopied:"Texto copiado.", sugFail:"Não foi possível agora. Use “Copiar texto” e cole no Word.",
   tips:{
    geral:["Troque tudo que está entre colchetes pelos seus dados e apague as linhas que não se aplicam.","Escreva o currículo no mesmo idioma da vaga.","Comece cada tópico com um verbo de ação e feche com um número.","Repita nas experiências as palavras-chave da vaga."],
    ti:["Coloque o GitHub ou portfólio na linha de contato.","Agrupe a stack por tipo e repita as principais dentro das experiências.","Use as mesmas palavras da vaga: “Power BI”, “JavaScript”, “CI/CD”.","Uma página basta com pouca experiência; duas páginas são aceitas com mais."],
@@ -287,6 +309,13 @@ const UI={
   mktNoteBr:"", mktNoteIntl:"Rules for jobs abroad (US, Canada, UK): 1–2 pages, no photo, no personal data, month-year dates.",
   tplH:"Single-column template", tplSeg:"Choose the field", tplMktBr:"", tplDl:"Download .docx", tplCopy:"Copy text", tplCopied:"Text copied.", tplSaved:"File sent for download.", tplFail:"Couldn't download right now. Use “Copy text” and paste it into Word.",
   tipsH:"How to fill it in",
+  tabSug:"Suggested resume", sugGo:"See the suggested resume with the fixes",
+  sugH:"Suggested resume", sugNeed:"Upload and analyze a resume in the “Check resume” tab to see the suggested version.",
+  sugOrig:"Original", sugNew:"Suggested", sugDone:"What was fixed", sugTodo:"What still depends on you",
+  sugNoTodo:"No pending points in the checks.", sugKwH:"Job keywords that are missing", sugKwNote:"Tick only what you really know. They go into the Skills section.",
+  sugUnp:"Passages I couldn't classify", sugUnpNote:"They are not in the suggested resume. Place each one in the right section, if it makes sense.",
+  sugReview:"The reorganization is automatic: check each section before sending. The content is yours, with no invented text. Fields in [brackets] need to be filled in.",
+  sugDl:"Download .docx", sugCopy:"Copy text", sugSaved:"File sent for download.", sugCopied:"Text copied.", sugFail:"Couldn't do it right now. Use “Copy text” and paste it into Word.",
   tips:{
    geral:["Replace everything in brackets with your details and delete lines that don't apply.","Write the resume in the same language as the job post.","Start every bullet with an action verb and end it with a number.","Repeat the job's keywords inside your experience."],
    ti:["Put your GitHub or portfolio in the contact line.","Group your stack by type and repeat the main items inside your experience.","Use the job's exact words: “Power BI”, “JavaScript”, “CI/CD”.","One page is enough with little experience; two pages are fine with more."],
@@ -626,11 +655,12 @@ async function readDocx(buf){
   if(!window.mammoth) throw new Error("lib");
   const r=await mammoth.convertToHtml({arrayBuffer:buf});
   const dom=new DOMParser().parseFromString(r.value,"text/html");
-  const lines=[...dom.body.querySelectorAll("p,h1,h2,h3,h4,h5,h6,li")].map(e=>e.textContent.trim()).filter(Boolean);
+  const rich=[...dom.body.querySelectorAll("p,h1,h2,h3,h4,h5,h6,li")].map(e=>({t:e.textContent.trim(),b:e.tagName==="LI"})).filter(x=>x.t);
+  const lines=rich.map(x=>x.t);
   const text=lines.join("\n");
   const tables=[...dom.body.querySelectorAll("table")];
   const tchars=tables.reduce((n,t)=>n+t.textContent.length,0);
-  return {text,cells:lines,lines,cols:null,tables:tables.length,tableShare:text.length?tchars/text.length:0,images:dom.body.querySelectorAll("img").length,pages:null,fontSize:null,liCount:dom.body.querySelectorAll("li").length,kind:"docx"};
+  return {text,cells:lines,lines,cols:null,tables:tables.length,tableShare:text.length?tchars/text.length:0,images:dom.body.querySelectorAll("img").length,pages:null,fontSize:null,liCount:dom.body.querySelectorAll("li").length,kind:"docx",rich};
 }
 
 /* ================= Exemplo ================= */
@@ -780,6 +810,196 @@ async function tplDocx(t){
   return D.Packer.toBlob(doc);
 }
 
+/* ================= Currículo sugerido ================= */
+const SUG_SEC=[
+ ["summary",/^(resumo|resumo profissional|perfil|perfil profissional|objetivo|objetivo profissional|sobre mim|summary|professional summary|profile|objective|career objective|about me)$/],
+ ["experience",/^(experiencia|experiencias|experiencia profissional|experiencias profissionais|historico profissional|trajetoria profissional|atuacao profissional|experience|work experience|professional experience|employment history|work history)$/],
+ ["education",/^(educacao|formacao|formacao academica|escolaridade|formacao e cursos|formacao academica e cursos|education|academic background|academic education)$/],
+ ["skills",/^(habilidades|competencias|conhecimentos|habilidades tecnicas|competencias tecnicas|ferramentas|tecnologias|ferramentas e tecnologias|habilidades e competencias|skills|technical skills|core competencies|key skills|tools|technologies)$/],
+ ["languages",/^(idiomas|idioma|languages|language)$/],
+ ["courses",/^(cursos|treinamentos|cursos e treinamentos|treinamentos e cursos|treinamentos cursos|cursos treinamentos|cursos e certificacoes|certificacoes|certificacoes e cursos|licencas e certificacoes|courses|training|certifications|certificates|licenses and certifications|courses and certifications|training and certifications)$/],
+ ["projects",/^(projetos|projetos pessoais|projects|personal projects|key projects)$/]
+];
+const secKey=l=>{ const n=norm(l).replace(/[^a-z0-9]+/g," ").trim(); if(!n||n.length>45) return null; const m=SUG_SEC.find(s=>s[1].test(n)); return m?m[0]:null; };
+const SUG_H={
+ pt:{summary:"Resumo",skills:"Habilidades",experience:"Experiência",education:"Educação",courses:"Cursos e certificações",projects:"Projetos",languages:"Idiomas",more:"Outras competências",lv:["básico","intermediário","avançado"],now:"Atual"},
+ en:{summary:"Summary",skills:"Skills",experience:"Experience",education:"Education",courses:"Courses and certifications",projects:"Projects",languages:"Languages",more:"Other skills",lv:["basic","intermediate","advanced"],now:"Present"}
+};
+const SUG_ORDER=["summary","skills","experience","education","courses","projects","languages"];
+const MON="jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|nov|dez|dec";
+const D1="(?:0?[1-9]|1[0-2])\\s*[\\/.\\-]\\s*(?:19|20)\\d{2}|(?:"+MON+")[a-zç]*\\.?\\s*(?:de\\s+)?(?:19|20)\\d{2}|(?:19|20)\\d{2}";
+const NOWW="atual|atualmente|presente|present|current|hoje|now|ate o momento";
+const RANGE_RE=new RegExp("("+D1+")\\s*(?:[-–—]|a|até|ate|to)\\s*("+D1+"|"+NOWW+")","i");
+const BSTART=/^[\s•▪◦‣●■▶►➢➤✓✔★☆♦*\-–—]+/;
+const EMAIL_RE=/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/;
+const PHONE_RE=/(\+?\d{1,3}[\s.\-]?)?\(?\d{2}\)?[\s.\-]?9?\d{4}[\s.\-]?\d{4}/;
+const URL_RE=/(linkedin\.com|github\.com|gitlab\.com|behance\.net|https?:\/\/|www\.)/i;
+const DOT_FULL=/[●⬤■▪◼★]/g, DOT_EMPTY=/[○□▫◻☆]/g, DOTS_RE=/[●⬤■▪◼★○□▫◻☆◐◑]{3,}/;
+function isPersonal(t){ const n=norm(t);
+  return /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/.test(n)||/\bcpf\b/.test(n)||/\brg\s*[:.]?\s*\d/.test(n)
+   ||/estado civil|marital status|\bsolteir[oa]\b|\bcasad[oa]\b|\bmarried\b|\bdivorciad[oa]\b/.test(n)
+   ||/\bidade\s*[:\-]?\s*\d{2}\b|\b\d{2}\s*anos\b|\b\d{2}\s*years old|data de nascimento|date of birth|\bnascid[oa]|\bdob\b/.test(n)
+   ||/\bnacionalidade\b|\bnationality\b|\bbrasileir[oa]\b/.test(n)
+   ||/\b(rua|avenida|av\.|alameda|travessa|street|avenue|road)\s+[a-z0-9 .]{2,40},?\s*(n[ºo.]?\s*)?\d{1,5}\b/.test(n); }
+const cap=s=>s.replace(/^[a-zà-ÿ]/,c=>c.toUpperCase());
+function fmtD(s){ s=s.trim(); const m=s.match(/^(\d{1,2})\s*[\/.\-]\s*((?:19|20)\d{2})$/); return m?m[1].padStart(2,"0")+"/"+m[2]:cap(s); }
+function normRange(m,l){ const b=new RegExp("^("+NOWW+")$").test(norm(m[2]).trim())?SUG_H[l].now:fmtD(m[2]); return fmtD(m[1])+" – "+b; }
+const trimEnds=s=>s.replace(/^[\s|•·\-–—,;:()]+|[\s|•·\-–—,;:()]+$/g,"");
+function levelize(t,l,st){
+  return t.replace(/\s*[:\-–]?\s*([●⬤■▪◼★○□▫◻☆◐◑]{3,})\s*$/,(m,d)=>{
+    const f=(d.match(DOT_FULL)||[]).length, e=(d.match(DOT_EMPTY)||[]).length, r=f/Math.max(1,f+e);
+    st.levels++; return (/:/.test(t)?" – ":": ")+SUG_H[l].lv[r<=0.4?0:r<=0.7?1:2];
+  });
+}
+function parseRoles(lines,l,st){
+  const roles=[]; let cur=null;
+  const look=i=>[0,1].some(k=>lines[i+k]&&!lines[i+k].b&&RANGE_RE.test(lines[i+k].t));
+  const start=()=>{ cur={head:[],dates:"",bul:[]}; roles.push(cur); };
+  const addHead=(t,dm)=>{ if(dm){ const nd=normRange(dm,l); if(nd!==dm[0]) st.dates++; cur.dates=nd; const rest=trimEnds(t.replace(RANGE_RE,"")); if(rest) cur.head.push(rest); } else cur.head.push(t); };
+  lines.forEach((ln,i)=>{
+    const t=ln.t, dm=t.match(RANGE_RE);
+    if(!cur){ start(); addHead(t,dm); return; }
+    if(ln.b){ cur.bul.push({t,b:true}); return; }
+    const header=!cur.dates&&!cur.bul.length;
+    if(header){ addHead(t,dm); return; }
+    if(t.length<=70&&!/^[a-zà-ÿ]/.test(t)&&look(i)){
+      const prev=cur.bul[cur.bul.length-1];
+      const carry=(!dm&&prev&&!prev.b&&prev.t.length<=60&&!/[.;:]$/.test(prev.t)&&!RANGE_RE.test(prev.t))?cur.bul.pop().t:null;
+      start(); if(carry) cur.head.push(carry); addHead(t,dm); return;
+    }
+    if(!cur.bul.length&&cur.head.length<2&&t.length<=70&&!/[.;]$/.test(t)){ cur.head.push(t); return; }
+    const prev=cur.bul[cur.bul.length-1];
+    if(prev&&/^[a-zà-ÿ(]/.test(t)) prev.t+=" "+t; else cur.bul.push({t,b:false});
+  });
+  return roles.map(r=>({title:r.head[0]||"",org:r.head.slice(1).join(", "),dates:r.dates,bullets:r.bul.map(x=>x.t)}));
+}
+function buildSuggestion(doc,l,picks){
+  const H=SUG_H[l], st={levels:0,dates:0,glyphs:0}, changes=[], A=(pt,en)=>changes.push(B(pt,en));
+  const raw=doc.rich||((doc.lines&&doc.lines.length?doc.lines:doc.text.split("\n")).map(t=>({t,b:false})));
+  const lines=[];
+  raw.forEach(r=>{
+    let t=r.t, b=r.b;
+    const g=(t.match(PUA_RE)||[]).length+(t.match(/\[(ícone|icone|icon)\]/gi)||[]).length; st.glyphs+=g;
+    t=t.replace(PUA_RE,"").replace(/\[(ícone|icone|icon)\]/gi,"").replace(/ /g," ");
+    if(BSTART.test(t)&&!RANGE_RE.test(t.slice(0,12))){ b=true; t=t.replace(BSTART,""); }
+    t=t.replace(/\s+$/,"").replace(/^\s+/,"");
+    if(t) lines.push({t,b});
+  });
+  // seções
+  const secs={header:[]}, renamed=[]; let key="header";
+  lines.forEach(ln=>{
+    const k=ln.b?null:secKey(ln.t);
+    if(k){ key=k; secs[k]=secs[k]||[]; if(norm(ln.t).replace(/[^a-z0-9]+/g," ").trim()!==norm(H[k]).replace(/[^a-z0-9]+/g," ").trim()) renamed.push([ln.t,H[k]]); return; }
+    (secs[key]=secs[key]||[]).push(ln);
+  });
+  // cabeçalho
+  let name="",headline="",contact=[],unplaced=[],removed=[];
+  (secs.header||[]).forEach(({t})=>{
+    const parts=(EMAIL_RE.test(t)||PHONE_RE.test(t)||URL_RE.test(t))?t.split(/\s{2,}|\s*[|·•]\s*/).map(x=>x.trim()).filter(Boolean):[t];
+    parts.forEach(x=>{
+      if(isPersonal(x)){ removed.push(x); return; }
+      if(EMAIL_RE.test(x)||PHONE_RE.test(x)||URL_RE.test(x)){ if(!contact.includes(x)) contact.push(x); return; }
+      if(!name){ name=x; return; }
+      if(!headline&&x.length<=70){ headline=x; return; }
+      if(x.length<=50&&(/,/.test(x)||/[-\/]\s*[A-Z]{2}$/.test(x))){ contact.push(x); return; }
+      unplaced.push(x);
+    });
+  });
+  const hasMail=contact.some(x=>EMAIL_RE.test(x)), hasPhone=contact.some(x=>PHONE_RE.test(x));
+  const missing=[];
+  const sh=TPL[l]._shell, g=TPL[l].geral;
+  if(!name) name=sh.name;
+  if(!headline) headline=g.headline;
+  if(!hasPhone) contact.push(l==="pt"?"[Telefone com DDD]":"[Phone number]");
+  if(!hasMail) contact.push(l==="pt"?"[e-mail]":"[email]");
+  // blocos
+  const blocks={};
+  const plain=a=>a.map(x=>x.t);
+  if(secs.summary&&secs.summary.length) blocks.summary=[{t:"p",x:plain(secs.summary).join(" ")}];
+  const skillBlocks=a=>{
+    const out=[], bare=[];
+    a.forEach(({t})=>{
+      t=levelize(t,l,st);
+      const m=t.match(/^([^:]{2,40}):\s*(.+)$/);
+      if(m){ out.push({t:"kv",k:m[1].trim(),x:m[2].replace(/\s{2,}/g,", ")}); }
+      else t.split(/\s{2,}/).forEach(x=>{ x=trimEnds(x); if(x) bare.push(x); });
+    });
+    if(bare.length) out.unshift({t:"p",x:bare.join(", ")});
+    return out;
+  };
+  if(secs.skills&&secs.skills.length) blocks.skills=skillBlocks(secs.skills);
+  if(secs.languages&&secs.languages.length) blocks.languages=[{t:"bullets",items:plain(secs.languages).map(x=>levelize(x,l,st))}];
+  ["experience","education"].forEach(k=>{
+    const a=secs[k]; if(!a||!a.length) return;
+    const roles=parseRoles(a,l,st);
+    if(k==="education"&&!roles.some(r=>r.dates)) blocks[k]=[{t:"bullets",items:plain(a)}];
+    else blocks[k]=roles.map(r=>({t:"role",r}));
+  });
+  ["courses","projects"].forEach(k=>{ if(secs[k]&&secs[k].length) blocks[k]=[{t:"bullets",items:plain(secs[k]).map(x=>levelize(x,l,st))}]; });
+  if(picks.length){
+    blocks.skills=blocks.skills||[];
+    blocks.skills.push({t:"kv",k:H.more,x:picks.join(", ")});
+  }
+  // seções ausentes
+  if(!blocks.summary){ blocks.summary=[{t:"p",x:g.summary}]; missing.push(H.summary); }
+  if(!blocks.skills){ blocks.skills=g.skills.map(k=>({t:"kv",k:k[0],x:k[1]})); missing.push(H.skills); }
+  if(!blocks.experience){ blocks.experience=[{t:"role",r:g.roles[0]}]; missing.push(H.experience); }
+  if(!blocks.education){ blocks.education=[{t:"role",r:{title:sh.eduItem[0],org:sh.eduItem[1],dates:sh.eduItem[2],bullets:[]}}]; missing.push(H.education); }
+  const model={name,headline,contact:contact.join(" | "),sections:SUG_ORDER.filter(k=>blocks[k]&&blocks[k].length).map(k=>({h:H[k],blocks:blocks[k]}))};
+  // lista de correções
+  if(doc.cols===true) A("Duas colunas viraram uma só, lida de cima para baixo.","Two columns became a single column, read top to bottom.");
+  if(doc.tables>0) A("Tabelas viraram texto simples.","Tables became plain text.");
+  if(contact.length) A("Contato no topo, em texto e numa linha só (nada em cabeçalho, rodapé ou imagem).","Contact details at the top as plain text on one line (nothing in a header, footer or image).");
+  if(renamed.length) A("Títulos padronizados: "+renamed.map(r=>`“${r[0]}” → “${r[1]}”`).join("; ")+".","Headings standardized: "+renamed.map(r=>`“${r[0]}” → “${r[1]}”`).join("; ")+".");
+  if(st.glyphs>0) A(`Removi ${st.glyphs} ícone(s) e símbolo(s) especial(is).`,`Removed ${st.glyphs} icon(s) and special symbol(s).`);
+  if(st.levels>0) A(`Níveis em bolinhas ou barras escritos por extenso (${st.levels}).`,`Dot or bar skill levels written out in words (${st.levels}).`);
+  if(removed.length) A(`Tirei dados pessoais desnecessários: ${removed.join("; ")}.`,`Removed unnecessary personal data: ${removed.join("; ")}.`);
+  if(st.dates>0) A(`Datas no padrão MM/AAAA – MM/AAAA (${st.dates}).`,`Dates in MM/YYYY – MM/YYYY style (${st.dates}).`);
+  if(doc.images>0) A("Foto, logotipos e gráficos ficam de fora: o arquivo novo só tem texto.","Photo, logos and graphics are left out: the new file is text only.");
+  A("Atividades em tópicos simples e fonte padrão (Arial 10,5 pt).","Duties in plain bullets and a standard font (Arial 10.5 pt).");
+  if(missing.length) A(`Criei campos [entre colchetes] em: ${missing.join(", ")}.`,`Added [bracketed] fields in: ${missing.join(", ")}.`);
+  const text=tplText(model), tl=text.split("\n");
+  const synth={text,cells:tl,lines:tl,cols:false,tables:0,tableShare:0,images:0,pages:null,fontSize:10.5,liCount:tl.filter(x=>x.startsWith("• ")).length,kind:"docx"};
+  return {model,changes,unplaced,synth};
+}
+let sugSel=new Set(), curSug=null;
+function renderSug(){
+  const t=T(), side=$("sug-side"), L=o=>h(o[lang]);
+  $("tab-sug").textContent=t.tabSug; $("sug-dl").textContent=t.sugDl; $("sug-copy").textContent=t.sugCopy;
+  $("sug-msg").classList.add("hidden");
+  if(!current||!result){
+    curSug=null; side.innerHTML=`<div class="step"><h2>${t.sugH}</h2><p class="note">${t.sugNeed}</p></div>`;
+    $("sug-paper").innerHTML=""; $("sug-dl").disabled=true; $("sug-copy").disabled=true; return;
+  }
+  $("sug-dl").disabled=false; $("sug-copy").disabled=false;
+  const miss=result.kw?result.kw.list.filter(x=>!x.found):[];
+  const picks=miss.filter(x=>sugSel.has(x.term)).map(x=>x.display);
+  const s=buildSuggestion(current.doc,lang,picks); curSug=s;
+  const after=analyze(s.synth,$("job").value,opts());
+  const todo=after.checks.filter(c=>(c.status==="fail"||c.status==="warn")&&c.fix);
+  $("sug-paper").innerHTML=tplHtml(s.model);
+  side.innerHTML=`
+   <div class="step"><h2>${t.sugH}</h2>
+    <div class="sug-sc"><div><b style="color:${col(result.overall)}">${result.overall}</b><small>${t.sugOrig}</small></div><span class="sug-arrow" aria-hidden="true">→</span><div><b style="color:${col(after.overall)}">${after.overall}</b><small>${t.sugNew}</small></div></div>
+    <p class="note">${t.sugReview}</p></div>
+   <div class="step"><h2>${t.sugDone}</h2><ul class="sug-list">${s.changes.map(c=>`<li>${L(c)}</li>`).join("")}</ul></div>
+   <div class="step"><h2>${t.sugTodo}</h2>${todo.length?`<ul class="sug-list">${todo.map(c=>`<li><b>${L(c.title)}.</b> ${L(c.fix)}</li>`).join("")}</ul>`:`<p class="note">${t.sugNoTodo}</p>`}</div>
+   ${miss.length?`<div class="step kwsel"><h2>${t.sugKwH}</h2><p class="note">${t.sugKwNote}</p>${miss.map(x=>`<label><input type="checkbox" data-kw="${h(x.term)}" ${sugSel.has(x.term)?"checked":""}> ${h(x.display)}</label>`).join("")}</div>`:""}
+   ${s.unplaced.length?`<div class="step"><h2>${t.sugUnp}</h2><p class="note">${t.sugUnpNote}</p><ul class="sug-list">${s.unplaced.map(x=>`<li>${h(x)}</li>`).join("")}</ul></div>`:""}`;
+}
+function sugMsg(m,bad){ const e=$("sug-msg"); e.textContent=m; e.style.color=bad?"var(--bad)":"var(--good)"; e.classList.remove("hidden"); }
+async function sugDownload(){
+  if(!curSug) return;
+  try{
+    const blob=await tplDocx(curSug.model);
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=(lang==="pt"?"curriculo-sugerido":"resume-suggested")+".docx";
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+    sugMsg(T().sugSaved,false);
+  }catch(e){ sugMsg(T().sugFail,true); }
+}
+async function sugCopy(){ if(!curSug) return; try{ await navigator.clipboard.writeText(tplText(curSug.model)); sugMsg(T().sugCopied,false); }catch(e){ sugMsg(T().sugFail,true); } }
+
 /* ================= Interface ================= */
 const $=id=>document.getElementById(id);
 let current=null;      // {doc,name,demo}
@@ -809,12 +1029,12 @@ function setLang(l){
     result=analyze(current.doc,$("job").value,opts()); aiState="idle"; aiHtmlCache=null;
   }
   if(result) renderResult(); else renderEmpty();
-  renderTpl();
+  renderTpl(); renderSug();
 }
 function setView(v){
   view=v;
-  $("view-check").classList.toggle("hidden",v!=="check"); $("view-tpl").classList.toggle("hidden",v!=="tpl");
-  $("tab-check").setAttribute("aria-selected",v==="check"); $("tab-tpl").setAttribute("aria-selected",v==="tpl");
+  ["check","tpl","sug"].forEach(k=>{ $("view-"+k).classList.toggle("hidden",v!==k); $("tab-"+k).setAttribute("aria-selected",v===k); });
+  if(v==="sug") renderSug();
 }
 let curTpl=null;
 function renderTpl(){
@@ -842,7 +1062,7 @@ function renderEmpty(){
   $("out").innerHTML=`<section class="card empty"><h2>${t.emptyH}</h2><p class="note" style="margin-top:6px;font-size:14px">${t.emptyIntro}</p><ul>${t.emptyList.map(x=>`<li>${x}</li>`).join("")}</ul></section>`;
 }
 function setFile(name,doc,demo){
-  current={doc,name,demo:!!demo}; result=null; aiState="idle"; aiHtmlCache=null;
+  current={doc,name,demo:!!demo}; sugSel=new Set(); result=null; aiState="idle"; aiHtmlCache=null;
   $("filename").textContent=name; $("filechip").classList.add("on"); $("go").disabled=false; showErr("");
 }
 function clearFile(){ current=null; result=null; $("file").value=""; $("filechip").classList.remove("on"); $("go").disabled=true; renderEmpty(); }
@@ -898,7 +1118,7 @@ function renderResult(){
       </div>
       <div class="verdict"><h2>${t[verdict[0]]}</h2><p>${t[verdict[1]]}</p>
         <div class="bars">${bar(t.fmt,r.fmt)}${r.kw?bar(t.match,r.kw.pct):""}</div>
-        <p class="note" style="margin-top:12px">${t.scoreNote}</p></div>
+        <p class="note" style="margin-top:12px">${t.scoreNote}</p><p style="margin-top:12px"><button type="button" class="btn" id="to-sug">${t.sugGo}</button></p></div>
     </div>
   </section>
   ${issues.length?`<section class="card"><div class="sec-h"><h2>${t.issues}</h2><span class="count">${issues.length}</span></div><ul class="checks">${issues.map(li).join("")}</ul></section>`:""}
@@ -907,6 +1127,7 @@ function renderResult(){
   <section class="card"><details><summary>${t.raw}</summary><p class="note" style="margin-top:8px">${t.rawNote}</p><pre class="raw">${h(r.text)}</pre></details></section>
   </div>`;
   renderAi();
+  $("to-sug").onclick=()=>{ setView("sug"); window.scrollTo({top:0,behavior:"smooth"}); };
 }
 
 function renderAi(){}
@@ -919,7 +1140,9 @@ $("fileclear").onclick=clearFile;
 $("go").onclick=run;
 $("seg").onchange=()=>{ if(current) run(); };
 $("tseg").onchange=renderTpl;
-$("tab-check").onclick=()=>setView("check"); $("tab-tpl").onclick=()=>setView("tpl");
+$("tab-check").onclick=()=>setView("check"); $("tab-tpl").onclick=()=>setView("tpl"); $("tab-sug").onclick=()=>setView("sug");
+$("sug-dl").onclick=sugDownload; $("sug-copy").onclick=sugCopy;
+$("sug-side").addEventListener("change",e=>{ const k=e.target.dataset&&e.target.dataset.kw; if(!k) return; e.target.checked?sugSel.add(k):sugSel.delete(k); renderSug(); });
 $("tpl-dl").onclick=tplDownload; $("tpl-copy").onclick=tplCopy;
 $("demo").onclick=()=>{ const d=DEMO[lang]; $("job").value=d.job; setFile(lang==="pt"?"curriculo-exemplo.pdf":"sample-resume.pdf",JSON.parse(JSON.stringify(d.doc)),true); run(); };
 const drop=$("drop");

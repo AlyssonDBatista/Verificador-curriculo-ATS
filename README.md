@@ -12,6 +12,7 @@ Site que mostra como um sistema de triagem de currículos (ATS) lê o seu currí
 - Verificações por segmento: TI e dados, saúde e farmácia, arquitetura e engenharia, financeiro e controladoria.
 - Modo internacional (EUA, Canadá, Reino Unido): dados pessoais, tamanho e datas.
 - Modelos de currículo em coluna única por segmento, para baixar em .docx.
+- Currículo sugerido: reorganiza o seu arquivo em coluna única, aplica as correções automáticas, mostra a nota antes e depois e permite baixar em .docx. Sem IA: só reorganiza o que já está no currículo.
 
 ## Como usar
 
