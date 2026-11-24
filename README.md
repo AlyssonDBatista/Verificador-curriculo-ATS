@@ -20,7 +20,7 @@ Abra o site publicado no GitHub Pages, ou rode localmente:
 
     python3 -m http.server 8000
 
-e acesse http://localhost:8000. A página carrega o leitor de PDF/Word e as fontes de CDNs, então precisa de internet.
+e acesse http://localhost:8000. Não precisa de internet: o leitor de PDF/Word, o gerador de .docx e as fontes ficam em `vendor/`, e a página não faz nenhum pedido a outros sites (a política de segurança da página bloqueia isso).
 
 ## Sugestões com IA (opcional, local)
 
@@ -33,6 +33,8 @@ O site publicado não tem IA, porque o GitHub Pages hospeda só arquivos estáti
 - `index.html`: página do site estático.
 - `assets/ats.js` e `assets/ats.css`: motor de análise, leitura de arquivos, modelos, currículo sugerido e interface. Usados pelas duas versões.
 - `local-ia/`: página local, `ia.js` (botão de IA) e `server.py`.
+- `vendor/`: pdf.js, mammoth, docx e fontes, com hash conferido. Veja [`vendor/README.md`](vendor/README.md).
+- `tests/`: testes automatizados. Veja [`tests/README.md`](tests/README.md).
 
 ## Como as regras foram definidas
 

@@ -1,0 +1,18 @@
+{
+  "name": "verificador-curriculo-ats",
+  "private": true,
+  "description": "Testes do Verificador ATS. O site não tem etapa de build: estes pacotes são só para rodar os testes.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tools/sri.js && node --test \"tests/*.test.js\"",
+    "fixtures": "node tests/fixtures/make.js",
+    "sri": "node tools/sri.js --write",
+    "vendor": "sh tools/vendor.sh && node tools/sri.js --write"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

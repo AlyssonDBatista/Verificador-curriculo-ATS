@@ -10,9 +10,9 @@ Levantamento feito em 24/11/2026 com base em concorrentes e ferramentas parecida
 - **Sem IA por padrão.** A IA (Qwen3 via Ollama) fica opcional, na pasta `local-ia/`.
 - O currículo sugerido **não inventa conteúdo**: só reorganiza o que existe e mostra campos `[entre colchetes]`.
 - Toda regra de ATS precisa ter fonte pública. Registrar em `docs/FONTES.md`, separando "fonte" de "escolha do projeto".
-- Todo arquivo é um único `index.html` hoje. Veja o item T3 antes de crescer muito.
+- O código comum fica em `assets/ats.js` e `assets/ats.css`, carregados pelas duas páginas. Veja o item T3 antes de crescer muito.
 
-## Mapa do código atual (`index.html`)
+## Mapa do código atual (`assets/ats.js`)
 
 | Parte | O que faz |
 |---|---|
@@ -137,9 +137,9 @@ Funcionar offline, instalável, modo escuro, navegação por teclado, contraste 
 
 ## Dívida técnica (fazer cedo)
 
-**T1. Bibliotecas locais com SRI.** pdf.js, mammoth e docx vêm de CDN. Copiar para o repositório (`vendor/`), usar `integrity` e uma política de segurança (CSP). Hoje o site depende de terceiros para funcionar e para a promessa de privacidade.
+**T1. Bibliotecas locais com SRI.** *(feito: `vendor/`, `tools/sri.js`, CSP nas duas páginas; as fontes também saíram do Google Fonts.)* pdf.js, mammoth e docx vêm de CDN. Copiar para o repositório (`vendor/`), usar `integrity` e uma política de segurança (CSP). Hoje o site depende de terceiros para funcionar e para a promessa de privacidade.
 
-**T2. Testes automatizados.** Criar `tests/` com fixtures de PDF e Word e testes de `analyze`, `extractKeywords` e `buildSuggestion` (Node + pdfjs-dist; ou Playwright). Rodar no GitHub Actions a cada push. O método usado até aqui: extrair as linhas do PDF com pdf.js em Node e rodar o código no Chrome sem interface.
+**T2. Testes automatizados.** *(feito: `tests/`, `npm test`, `.github/workflows/testes.yml`. Os testes marcados como `todo` mostram dois problemas do item M8 ainda abertos.)* Criar `tests/` com fixtures de PDF e Word e testes de `analyze`, `extractKeywords` e `buildSuggestion` (Node + pdfjs-dist; ou Playwright). Rodar no GitHub Actions a cada push. O método usado até aqui: extrair as linhas do PDF com pdf.js em Node e rodar o código no Chrome sem interface.
 
 **T3. Separar o `index.html`.** Hoje passa de 1.100 linhas. Dividir em `css/`, `js/analyze.js`, `js/parse.js`, `js/suggest.js`, `js/ui.js`, `data/*.json`, sem etapa de build (módulos ES nativos).
 
