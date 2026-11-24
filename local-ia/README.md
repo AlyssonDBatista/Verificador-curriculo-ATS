@@ -7,7 +7,7 @@ O conteúdo do currículo não é enviado a nenhum servidor externo.
 
 1. **Python 3** (python.org). Se você já usa Python, já tem.
 2. **Ollama** (ollama.com/download), o programa que roda o Qwen3 no seu computador.
-3. **Internet** só para a página carregar o leitor de PDF/Word e as fontes. O texto do currículo não passa por ela.
+3. Não precisa de internet depois de baixar o projeto e o modelo: o leitor de PDF/Word e as fontes vêm junto, em `../vendor/`.
 
 ## Instalação (uma vez)
 
@@ -52,7 +52,7 @@ a resposta pode levar alguns minutos. Exemplo no terminal (Windows):
 - **"O modelo ainda não foi baixado":** rode o `ollama pull` do modelo indicado na mensagem.
 - **Demora muito:** use um modelo menor (`qwen3:4b`) ou feche outros programas pesados.
 - **Porta 8000 ocupada:** rode com outra porta, por exemplo `set PORT=8010` antes do `python server.py`.
-- **PDF ou Word não abre:** confira se você está online (o leitor de arquivos vem da internet) e se o PDF não tem senha.
+- **PDF ou Word não abre:** confira se o PDF não tem senha e se a pasta `vendor/` do projeto está completa.
 
 ## Observações
 

@@ -1,0 +1,17 @@
+sha384-4xaIisuLEy2lo2HkB2C4rEf7v8jbTb2kuogX6TkuEt9feTWKBSFSOzsqNNbV+sKh  vendor/docx/index.umd.js
+sha384-1zaDm1X8QaQbSsXUj87WgbkZaWbjHNHzf3Z+4AHqR5Aj7+pAyBkvP08BbNL5fM0f  vendor/fonts/fonts.css
+sha384-uyaHkKeULpfVW46F7eUkZGPNUxm+BseEt3CcmX6oGqGKmwqTZ10DMrLIbooBMJ9L  vendor/fonts/ibm-plex-sans-latin-400-normal.woff2
+sha384-mN2lXCqxjMTJ8OBhQPx3FsZBQ0TD4xcyjDqrTs/DEHOm24LBJ6FCYYErph9w8y9C  vendor/fonts/ibm-plex-sans-latin-500-normal.woff2
+sha384-+28tYNwCw/oHSFtOZghU2lmIbpQWxj5OyjfsJWWFfsyeI9uf1f6SLNgYFR7KJuiW  vendor/fonts/ibm-plex-sans-latin-600-normal.woff2
+sha384-9PhWC6GF9dHkn8ZRNRf5mSGe0COAosysZZjl1Dui6BysDwH3H3VC7nBLXf1bT9pf  vendor/fonts/ibm-plex-sans-latin-ext-400-normal.woff2
+sha384-YUU6SF7LFzwIVuWQMc6k1+IDB+lTmOYvyv7DVYp2PPSBHd6zEy4/oNImGkyTxTAD  vendor/fonts/ibm-plex-sans-latin-ext-500-normal.woff2
+sha384-7gGevbV4um9/IEwG7HTPN8vz9IgaLYdGW61PDZrJizNSVgSl28A3Sl2trWwiInXV  vendor/fonts/ibm-plex-sans-latin-ext-600-normal.woff2
+sha384-h6cxownIAO3b8G3yOMfioFISos4smxsXsfM2SuVeBOt+EWzON5L8IrtaLvpmwcvk  vendor/fonts/rubik-latin-400-normal.woff2
+sha384-umrCQIKLAx5nMnD8McO2U3H/tHvLukssbWu+j/b9brD+AGaltWi8HuAHXUNT9piN  vendor/fonts/rubik-latin-500-normal.woff2
+sha384-EidyTZCqDythg4TVFehtF4mkfiXBgTEMf/H0nFHP82EGkG5vO9Eum3tKVz/7aOAO  vendor/fonts/rubik-latin-600-normal.woff2
+sha384-40mwroHRHBJojim7qUFY6+Z4qcTWicuPM/YixQmyvgAHTw8Vxo1Fn8EXBEBvZmxJ  vendor/fonts/rubik-latin-ext-400-normal.woff2
+sha384-ExUs8uGzK8I7bDwreUwd8qNHTqAuPuSMI28gA/Sz0t/2ihW54+9dA2y9mqLmUOQG  vendor/fonts/rubik-latin-ext-500-normal.woff2
+sha384-rtrd1jDglQosweOCpo76PSa/gKm57A6OWb1v1/8O39SwpIk1XocwoKs5y/b+QAii  vendor/fonts/rubik-latin-ext-600-normal.woff2
+sha384-nFoSjZIoH3CCp8W639jJyQkuPHinJ2NHe7on1xvlUA7SuGfJAfvMldrsoAVm6ECz  vendor/mammoth/mammoth.browser.min.js
+sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e  vendor/pdfjs/pdf.min.js
+sha384-SnzOobpRMLXZ52iJvZm/C0fYw0OQemTXzTjIsdsfMcrCtCEe9qgzxTd3RSklO5x2  vendor/pdfjs/pdf.worker.min.js

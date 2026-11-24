@@ -18,15 +18,30 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-# Únicos arquivos servidos. CSS e JS comuns ficam em ../assets (os mesmos do site estático);
-# a página pede "../assets/...", que o navegador resolve para "/assets/...".
-STATIC_FILES = {
-    "/": (os.path.join(HERE, "index.html"), "text/html; charset=utf-8"),
-    "/index.html": (os.path.join(HERE, "index.html"), "text/html; charset=utf-8"),
-    "/ia.js": (os.path.join(HERE, "ia.js"), "text/javascript; charset=utf-8"),
-    "/assets/ats.js": (os.path.join(ROOT, "assets", "ats.js"), "text/javascript; charset=utf-8"),
-    "/assets/ats.css": (os.path.join(ROOT, "assets", "ats.css"), "text/css; charset=utf-8"),
-}
+# Únicos arquivos servidos: a página local, ia.js e as pastas comuns ../assets e ../vendor
+# (as mesmas do site estático). A página pede "../assets/...", que o navegador resolve
+# para "/assets/...". A lista é montada na partida, então não há como pedir outro caminho.
+TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
+         ".css": "text/css; charset=utf-8", ".woff2": "font/woff2"}
+
+
+def _static_files():
+    files = {
+        "/": os.path.join(HERE, "index.html"),
+        "/index.html": os.path.join(HERE, "index.html"),
+        "/ia.js": os.path.join(HERE, "ia.js"),
+    }
+    for sub in ("assets", "vendor"):
+        for base, _dirs, names in os.walk(os.path.join(ROOT, sub)):
+            for n in names:
+                p = os.path.join(base, n)
+                ext = os.path.splitext(n)[1]
+                if ext in TYPES:
+                    files["/" + os.path.relpath(p, ROOT).replace(os.sep, "/")] = p
+    return {url: (p, TYPES[os.path.splitext(p)[1]]) for url, p in files.items()}
+
+
+STATIC_FILES = _static_files()
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 MODEL = os.environ.get("QWEN_MODEL", "qwen3:8b")
 PORT = int(os.environ.get("PORT", "8000"))

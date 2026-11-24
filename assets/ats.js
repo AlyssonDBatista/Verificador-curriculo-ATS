@@ -408,8 +408,10 @@ function analyze(doc,job,opt={}){
 /* ================= Leitura de arquivos ================= */
 async function readPdf(buf){
   if(!window.pdfjsLib) throw new Error("lib");
-  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  // O worker vem da mesma origem (vendor/pdfjs); o caminho fica no atributo data-worker da página.
+  const tag=document.querySelector("script[data-worker]");
+  pdfjsLib.GlobalWorkerOptions.workerSrc=tag?tag.dataset.worker:"vendor/pdfjs/pdf.worker.min.js";
+  const pdf=await pdfjsLib.getDocument({data:buf,isEvalSupported:false}).promise;
   const maxP=Math.min(pdf.numPages,5);
   let text="",cells=[],lines=[],cols=false,images=0,sizeChars=[];
   for(let p=1;p<=maxP;p++){
@@ -807,9 +809,9 @@ const $=id=>document.getElementById(id);
 let current=null;      // {doc,name,demo}
 let view="check";
 const opts=()=>({market:lang==="en"?"intl":"br",segment:$("seg").value});
-// A versão local (local-ia/) define window.ATS_AI=true antes de carregar este arquivo
-// e carrega local-ia/ia.js depois dele, que substitui renderAi().
-const AI_ON=!!window.ATS_AI;
+// A versão local (local-ia/) marca <html data-ai="local"> e carrega local-ia/ia.js
+// depois deste arquivo, que substitui renderAi().
+const AI_ON=document.documentElement.dataset.ai==="local";
 let result=null, aiState="idle", aiHtmlCache=null;
 
 function setLang(l){
