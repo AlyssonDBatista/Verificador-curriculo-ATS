@@ -19,6 +19,8 @@ São cerca de 5,2 GB. Deixe o aplicativo Ollama aberto.
 
 ## Para usar
 
+Baixe o repositório inteiro, não só esta pasta: a página usa o motor comum em `../assets/` (`ats.js` e `ats.css`), o mesmo do site publicado. O servidor só entrega estes arquivos e as rotas `/api/health` e `/api/chat`; a parte de IA fica em `ia.js`.
+
 - **Windows:** dê dois cliques em `iniciar.bat`.
 - **Mac ou Linux:** rode `sh iniciar.sh`.
 - **Manual:** na pasta, rode `python server.py` e abra http://localhost:8000

@@ -28,6 +28,12 @@ A pasta [`local-ia/`](local-ia/) tem uma versão que gera sugestões de reescrit
 
 O site publicado não tem IA, porque o GitHub Pages hospeda só arquivos estáticos.
 
+## Estrutura
+
+- `index.html`: página do site estático.
+- `assets/ats.js` e `assets/ats.css`: motor de análise, leitura de arquivos, modelos, currículo sugerido e interface. Usados pelas duas versões.
+- `local-ia/`: página local, `ia.js` (botão de IA) e `server.py`.
+
 ## Como as regras foram definidas
 
 As regras seguem documentação de plataformas (Gupy e Greenhouse) e guias e pesquisas de mercado. Os pesos da nota e as listas de termos por segmento são escolhas do projeto. Veja [`docs/FONTES.md`](docs/FONTES.md) para o que tem fonte e o que não tem.

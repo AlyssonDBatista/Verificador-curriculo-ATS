@@ -14,9 +14,19 @@ import os
 import re
 import urllib.error
 import urllib.request
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+# Únicos arquivos servidos. CSS e JS comuns ficam em ../assets (os mesmos do site estático);
+# a página pede "../assets/...", que o navegador resolve para "/assets/...".
+STATIC_FILES = {
+    "/": (os.path.join(HERE, "index.html"), "text/html; charset=utf-8"),
+    "/index.html": (os.path.join(HERE, "index.html"), "text/html; charset=utf-8"),
+    "/ia.js": (os.path.join(HERE, "ia.js"), "text/javascript; charset=utf-8"),
+    "/assets/ats.js": (os.path.join(ROOT, "assets", "ats.js"), "text/javascript; charset=utf-8"),
+    "/assets/ats.css": (os.path.join(ROOT, "assets", "ats.css"), "text/css; charset=utf-8"),
+}
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 MODEL = os.environ.get("QWEN_MODEL", "qwen3:8b")
 PORT = int(os.environ.get("PORT", "8000"))
@@ -47,10 +57,7 @@ def ollama_chat(prompt):
     return re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()
 
 
-class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *a, **kw):
-        super().__init__(*a, directory=HERE, **kw)
-
+class Handler(BaseHTTPRequestHandler):
     def _send(self, code, obj):
         raw = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -69,7 +76,21 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, {"ok": True, "model": MODEL, "installed": installed})
             except Exception:
                 return self._send(200, {"ok": False, "model": MODEL, "installed": False})
-        return super().do_GET()
+        entry = STATIC_FILES.get(self.path.split("?")[0])
+        if not entry:
+            return self._send(404, {"error": "not found"})
+        path, ctype = entry
+        try:
+            with open(path, "rb") as f:
+                raw = f.read()
+        except OSError:
+            return self._send(404, {"error": f"arquivo ausente: {os.path.relpath(path, ROOT)}"})
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(raw)))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(raw)
 
     def do_POST(self):
         if self.path.split("?")[0] != "/api/chat":
