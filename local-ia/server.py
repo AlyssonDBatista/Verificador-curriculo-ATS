@@ -20,6 +20,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 MODEL = os.environ.get("QWEN_MODEL", "qwen3:8b")
 PORT = int(os.environ.get("PORT", "8000"))
+ALLOWED_HOSTS = {f"localhost:{PORT}", f"127.0.0.1:{PORT}"}
+STATIC_FILES = {"/", "/index.html"}
 MAX_BODY = 200_000          # bytes aceitos por pedido
 GEN_TIMEOUT = 900           # segundos de espera pela resposta do modelo
 
@@ -60,8 +62,22 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(raw)
 
+    def _local_only(self):
+        # Bloqueia DNS rebinding e pedidos de outros sites abertos no navegador.
+        if self.headers.get("Host", "") not in ALLOWED_HOSTS:
+            self._send(403, {"error": "host não permitido"})
+            return False
+        origin = self.headers.get("Origin")
+        if origin and origin.split("://", 1)[-1] not in ALLOWED_HOSTS:
+            self._send(403, {"error": "origem não permitida"})
+            return False
+        return True
+
     def do_GET(self):
-        if self.path.split("?")[0] == "/api/health":
+        if not self._local_only():
+            return
+        path = self.path.split("?")[0]
+        if path == "/api/health":
             try:
                 tags = ollama_get("/api/tags")
                 names = [m.get("name", "") for m in tags.get("models", [])]
@@ -69,13 +85,20 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send(200, {"ok": True, "model": MODEL, "installed": installed})
             except Exception:
                 return self._send(200, {"ok": False, "model": MODEL, "installed": False})
+        if path not in STATIC_FILES:  # serve só a página, não server.py etc.
+            return self._send(404, {"error": "not found"})
         return super().do_GET()
 
     def do_POST(self):
+        if not self._local_only():
+            return
         if self.path.split("?")[0] != "/api/chat":
             return self._send(404, {"error": "not found"})
         try:
-            n = int(self.headers.get("Content-Length", "0"))
+            try:
+                n = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                n = 0
             if n <= 0 or n > MAX_BODY:
                 return self._send(413, {"error": "pedido vazio ou grande demais"})
             prompt = json.loads(self.rfile.read(n).decode("utf-8")).get("prompt", "")

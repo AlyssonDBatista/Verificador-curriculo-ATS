@@ -347,6 +347,8 @@ const PUA_RE=/[-]/g;
 const ODD_RE=/[■-◿☀-➿⭐⬤]/g;
 const DATE_MY=/\b(0?[1-9]|1[0-2])\s*[\/\-.]\s*(19|20)\d{2}\b|\b(jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|nov|dez|dec)[a-z]*\.?\s*(de\s+)?(19|20)\d{2}\b/gi;
 const DATE_Y=/\b(19|20)\d{2}\b/g;
+const EMAIL_RE=/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/;
+const PHONE_RE=/(\+?\d{1,3}[\s.\-]?)?\(?\d{2}\)?[\s.\-]?9?\d{4}[\s.\-]?\d{4}/;
 
 function pdfGutter(items,W,H){
   const body=items.filter(i=>i.y<H*0.84&&i.str.trim().length>0);
@@ -355,10 +357,13 @@ function pdfGutter(items,W,H){
   if(body.length<20||total<200) return false;
   let start=null,best=null;
   const keep=x=>{ if(x-start>=12&&(!best||x-start>best[1]-best[0])) best=[start,x]; };
-  const x1=Math.round(W*0.78);
-  for(let x=Math.round(W*0.22);x<=x1;x++){
-    const covered=body.some(i=>i.x<x&&i.x+i.w>x);
-    if(!covered){ if(start===null) start=x; } else if(start!==null){ keep(x); start=null; }
+  const x0=Math.round(W*0.22), x1=Math.round(W*0.78);
+  // mapa de cobertura: cov[x-x0]>0 quando algum trecho cobre a coluna x (i.x<x<i.x+i.w)
+  const cov=new Int32Array(x1-x0+2);
+  body.forEach(i=>{ const a=Math.max(x0,Math.floor(i.x)+1), b=Math.min(x1+1,Math.ceil(i.x+i.w)); if(a<b){ cov[a-x0]++; cov[b-x0]--; } });
+  for(let x=x0,run=0;x<=x1;x++){
+    run+=cov[x-x0];
+    if(!run){ if(start===null) start=x; } else if(start!==null){ keep(x); start=null; }
   }
   if(start!==null) keep(x1);
   if(!best) return false;
@@ -391,12 +396,12 @@ function pdfPageText(items){
   return {lines,cells};
 }
 
+const SKILL_RES=[...new Set(SKILLS)].sort((a,b)=>b.length-a.length).map(s=>[s,new RegExp("(?<![a-z0-9])"+esc(s)+"(?![a-z0-9])","g")]);
 function extractKeywords(job){
   const orig=job, n=norm(job);
   const terms=new Map();
   const claimed=new Set();
-  SKILLS.slice().sort((a,b)=>b.length-a.length).forEach(s=>{
-    const re=new RegExp("(?<![a-z0-9])"+esc(s)+"(?![a-z0-9])","g");
+  SKILL_RES.forEach(([s,re])=>{
     const m=n.match(re);
     if(m&&!terms.has(s)){
       const idx=n.search(re), shownTxt=orig.slice(idx,idx+s.length);
@@ -460,8 +465,8 @@ function analyze(doc,job,opt={}){
     sc===4?null:B("Use títulos simples e comuns, como “Resumo”, “Experiência”, “Educação” e “Habilidades”, sem nomes criativos.","Use plain, common headings such as “Summary”, “Experience”, “Education” and “Skills”, with no creative names."));
 
   // 4 contato
-  const email=/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/.test(text);
-  const phone=/(\+?\d{1,3}[\s.\-]?)?\(?\d{2}\)?[\s.\-]?9?\d{4}[\s.\-]?\d{4}/.test(text);
+  const email=EMAIL_RE.test(text);
+  const phone=PHONE_RE.test(text);
   const cn=(email?1:0)+(phone?1:0);
   add("contact",10,cn===2?"pass":cn===1?"warn":"fail",B("Dados de contato","Contact details"),
     B(`E-mail: ${email?"encontrado":"não encontrado"}. Telefone: ${phone?"encontrado":"não encontrado"}.`,`Email: ${email?"found":"not found"}. Phone: ${phone?"found":"not found"}.`),
@@ -497,7 +502,7 @@ function analyze(doc,job,opt={}){
           :B("Está longo. Mantenha até 2 páginas, priorizando as experiências mais recentes e relevantes para a vaga.","It's long. Keep it to 2 pages, prioritizing the most recent experience that is relevant to the job."));
 
   // 9 fonte
-  if(doc.fontSize) add("font",5,doc.fontSize>=10?"pass":doc.fontSize>=9?"warn":"warn",B("Tamanho da fonte","Font size"),
+  if(doc.fontSize) add("font",5,doc.fontSize>=10?"pass":"warn",B("Tamanho da fonte","Font size"),
     B(`Tamanho típico do texto: ${doc.fontSize.toFixed(1)} pt.`,`Typical body text size: ${doc.fontSize.toFixed(1)} pt.`),
     doc.fontSize>=10?null:B("Use 10 a 12 pt no texto. Fonte pequena prejudica a leitura do recrutador depois que o robô aprova.","Use 10–12 pt for body text. Small type hurts the recruiter's reading once the robot approves it."));
 
@@ -628,6 +633,7 @@ async function readPdf(buf){
   if(!window.pdfjsLib) throw new Error("lib");
   pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  try{
   const maxP=Math.min(pdf.numPages,5);
   let text="",cells=[],lines=[],cols=false,images=0,sizeChars=[];
   for(let p=1;p<=maxP;p++){
@@ -643,6 +649,7 @@ async function readPdf(buf){
       const ops=await page.getOperatorList(), O=pdfjsLib.OPS;
       ops.fnArray.forEach(f=>{ if(f===O.paintImageXObject||f===O.paintInlineImageXObject||f===O.paintJpegXObject) images++; });
     }catch(e){} }
+    page.cleanup();
   }
   let fs=null;
   if(sizeChars.length){
@@ -650,6 +657,7 @@ async function readPdf(buf){
     for(const [h,c] of sizeChars){ acc+=c; if(acc>=tot/2){ fs=h; break; } }
   }
   return {text:text.trim(),cells,lines,cols,tables:null,tableShare:0,images,pages:pdf.numPages,fontSize:fs,liCount:0,kind:"pdf"};
+  }finally{ pdf.destroy(); }
 }
 async function readDocx(buf){
   if(!window.mammoth) throw new Error("lib");
@@ -833,8 +841,6 @@ const NOWW="atual|atualmente|presente|present|current|hoje|now|ate o momento";
 const RANGE_RE=new RegExp("(?<![\\d/])("+D1+")(?:\\s*[-–—]\\s*|\\s+(?:a|até|ate|to)\\s+|\\s+)("+D1+"|"+NOWW+")(?![\\d/])","i");
 const MY_ONE_RE=new RegExp("(?<![\\d/])(?:"+MY+")(?![\\d/])","i");
 const BSTART=/^[\s•▪◦‣●■▶►➢➤✓✔★☆♦*\-–—]+/;
-const EMAIL_RE=/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/;
-const PHONE_RE=/(\+?\d{1,3}[\s.\-]?)?\(?\d{2}\)?[\s.\-]?9?\d{4}[\s.\-]?\d{4}/;
 const URL_RE=/(linkedin\.com|github\.com|gitlab\.com|behance\.net|https?:\/\/|www\.)/i;
 const DOT_FULL=/[●⬤■▪◼★]/g, DOT_EMPTY=/[○□▫◻☆]/g, DOTS_RE=/[●⬤■▪◼★○□▫◻☆◐◑]{3,}/;
 function isPersonal(t){ const n=norm(t);
@@ -1025,7 +1031,7 @@ const $=id=>document.getElementById(id);
 let current=null;      // {doc,name,demo}
 let view="check";
 const opts=()=>({market:lang==="en"?"intl":"br",segment:$("seg").value});
-let result=null, aiState="idle", aiHtmlCache=null;
+let result=null;
 
 function setLang(l){
   lang=l; document.documentElement.lang=l==="pt"?"pt-BR":"en";
@@ -1046,7 +1052,7 @@ function setLang(l){
   $("t-tplh").textContent=t.tplH; $("t-tseglabel").textContent=t.tplSeg; $("tpl-dl").textContent=t.tplDl; $("tpl-copy").textContent=t.tplCopy; $("t-tipsh").textContent=t.tipsH;
   if(current){
     if(current.demo){ const d=DEMO[l]; $("job").value=d.job; current.doc=JSON.parse(JSON.stringify(d.doc)); current.name=l==="pt"?"curriculo-exemplo.pdf":"sample-resume.pdf"; $("filename").textContent=current.name; }
-    result=analyze(current.doc,$("job").value,opts()); aiState="idle"; aiHtmlCache=null;
+    result=analyze(current.doc,$("job").value,opts());
   }
   if(result) renderResult(); else renderEmpty();
   renderTpl(); renderSug();
@@ -1082,10 +1088,10 @@ function renderEmpty(){
   $("out").innerHTML=`<section class="card empty"><h2>${t.emptyH}</h2><p class="note" style="margin-top:6px;font-size:14px">${t.emptyIntro}</p><ul>${t.emptyList.map(x=>`<li>${x}</li>`).join("")}</ul></section>`;
 }
 function setFile(name,doc,demo){
-  current={doc,name,demo:!!demo}; sugSel=new Set(); result=null; aiState="idle"; aiHtmlCache=null;
+  current={doc,name,demo:!!demo}; sugSel=new Set(); result=null;
   $("filename").textContent=name; $("filechip").classList.add("on"); $("go").disabled=false; showErr("");
 }
-function clearFile(){ current=null; result=null; $("file").value=""; $("filechip").classList.remove("on"); $("go").disabled=true; renderEmpty(); }
+function clearFile(){ current=null; result=null; sugSel=new Set(); $("file").value=""; $("filechip").classList.remove("on"); $("go").disabled=true; renderEmpty(); renderSug(); }
 
 async function handleFile(f){
   showErr("");
@@ -1105,7 +1111,6 @@ async function handleFile(f){
 function run(){
   if(!current) return;
   result=analyze(current.doc,$("job").value,opts());
-  aiState="idle"; aiHtmlCache=null;
   renderResult();
   $("out").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -1146,16 +1151,13 @@ function renderResult(){
   ${oks.length?`<section class="card"><details><summary>${t.okh} (${oks.length})</summary><ul class="checks" style="margin-top:12px">${oks.map(li).join("")}</ul></details></section>`:""}
   <section class="card"><details><summary>${t.raw}</summary><p class="note" style="margin-top:8px">${t.rawNote}</p><pre class="raw">${h(r.text)}</pre></details></section>
   </div>`;
-  renderAi();
   $("to-sug").onclick=()=>{ setView("sug"); window.scrollTo({top:0,behavior:"smooth"}); };
 }
-
-function renderAi(){}
 
 /* ================= Eventos ================= */
 $("lang-pt").onclick=()=>setLang("pt");
 $("lang-en").onclick=()=>setLang("en");
-$("file").onchange=e=>{ const f=e.target.files[0]; if(f) handleFile(f); };
+$("file").onchange=e=>{ const f=e.target.files[0]; e.target.value=""; if(f) handleFile(f); };
 $("fileclear").onclick=clearFile;
 $("go").onclick=run;
 $("seg").onchange=()=>{ if(current) run(); };
@@ -1167,7 +1169,8 @@ $("tpl-dl").onclick=tplDownload; $("tpl-copy").onclick=tplCopy;
 $("demo").onclick=()=>{ const d=DEMO[lang]; $("job").value=d.job; setFile(lang==="pt"?"curriculo-exemplo.pdf":"sample-resume.pdf",JSON.parse(JSON.stringify(d.doc)),true); run(); };
 const drop=$("drop");
 ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
-["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+drop.addEventListener("dragleave",e=>{ e.preventDefault(); if(!drop.contains(e.relatedTarget)) drop.classList.remove("over"); });
+drop.addEventListener("drop",e=>{ e.preventDefault(); drop.classList.remove("over"); });
 drop.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
 setLang("pt");
 </script>
